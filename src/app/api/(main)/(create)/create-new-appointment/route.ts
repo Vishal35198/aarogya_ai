@@ -11,10 +11,23 @@ export async function POST( request: NextRequest){
         const { searchParams } = new URL(request.url, "http://localhost:3000");
         const { patientId, doctorId } = Object.fromEntries(searchParams);
 
-        const { startTimestamp, endTimestamp, location, details, disease, patientPhoneNumber, patientAddress, patientBloodGroup, patientDisease,  } = await request.json();
+        const { 
+            startTimestamp, 
+            endTimestamp, 
+            location, 
+            details, 
+            disease, 
+            prescriptions,
+            patientAllergies,
+            patientMedications,
+            patientDiseases,
+            patientSymptoms,  
+        } = await request.json();
 
-        console.log("patientId, doctorId, location , startTimeStamp, endTimeStamp,  ", patientId, doctorId, location, startTimestamp, endTimestamp, disease, details)
+        console.log("patientId, doctorId, location , startTimeStamp, endTimeStamp,  ", patientId, doctorId, location, startTimestamp, endTimestamp, disease, details, patientAllergies, patientMedications, patientDiseases, patientSymptoms, prescriptions)
         
+        console.log("patientId: ", patientId)
+        console.log("doctorId: ", doctorId)
     
         if(!patientId || !doctorId || !startTimestamp || !endTimestamp){
             return NextResponse.json({
@@ -42,6 +55,7 @@ export async function POST( request: NextRequest){
     
             const doctor = await DoctorModel.findById(doctorId);
             if(!doctor){
+                console.log("Doctors not found")
                 return NextResponse.json({
                     status: 404,
                     message: "Doctor not found"
@@ -50,6 +64,7 @@ export async function POST( request: NextRequest){
                     status: 404
                 })
             }
+            console.log("Doctor found: ", doctor)
 
             const patientOverlapppingAppointments = await AppointmentModel.findOne({
                 patientId: patientId,
@@ -101,9 +116,15 @@ export async function POST( request: NextRequest){
                 doctorId: doctorId,
                 startTimestamp: startTimestamp,
                 endTimestamp: endTimestamp,
-                location: location,
-                disease: disease,
-                details: details
+                location: location || "",
+                disease: disease || "",
+                patientAllergies: patientAllergies || [],
+                patientMedications: patientMedications  || [],
+                patientDiseases: patientDiseases  || [],
+                patientSymptoms: patientSymptoms  || [],
+                prescriptions: prescriptions || [],
+                details: details || "",
+                status: "pending"
             });
     
             const response = await appointment.save();
@@ -125,7 +146,8 @@ export async function POST( request: NextRequest){
             return NextResponse.json({
                 status: 201,
                 message: "Appointment created",
-                data: appointment
+                data: response,
+                id: response._id
             },
             {
                 status: 201
